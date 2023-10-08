@@ -35,9 +35,9 @@ internal class Leaderboards
     }
 
     [OneTimeTearDown]
-    public void OneTimeTearDown()
+    public async Task OneTimeTearDown()
     {
-        _factory.Dispose();
+        await _factory.DisposeAsync();
     }
 
     [Test]
