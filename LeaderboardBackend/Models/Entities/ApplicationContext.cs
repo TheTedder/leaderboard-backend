@@ -27,8 +27,8 @@ public class ApplicationContext : DbContext
 
         // when new extensions have been enabled by migrations, Npgsql's type cache must be refreshed
         NpgsqlConnection connection = (NpgsqlConnection)Database.GetDbConnection();
+        await connection.OpenAsync();
 
-        await Database.OpenConnectionAsync();
         try
         {
             await connection.ReloadTypesAsync();
