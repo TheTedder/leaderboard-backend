@@ -13,16 +13,15 @@ namespace LeaderboardBackend.Test;
 internal class Categories
 {
     private static TestApiClient _apiClient = null!;
-    private static TestApiFactory _factory = null!;
+    private static readonly TestApiFactory _factory = new();
     private static string? _jwt;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
     {
-        _factory = new TestApiFactory();
         _apiClient = _factory.CreateTestApiClient();
+        await _factory.ResetDatabase();
 
-        _factory.ResetDatabase();
         _jwt = (await _apiClient.LoginAdminUser()).Token;
     }
 
