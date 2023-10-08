@@ -18,6 +18,7 @@ internal class PostgresDatabaseFixture
     public static int Port { get; private set; }
     public static bool HasCreatedTemplate { get; private set; } = false;
     private static string TemplateDatabase => Database! + "_template";
+    private static NpgsqlDataSource? _templateSource;
 
     [OneTimeSetUp]
     public static async Task OneTimeSetup()
@@ -25,13 +26,17 @@ internal class PostgresDatabaseFixture
         PostgresContainer = new PostgreSqlBuilder()
             .WithTmpfsMount("/var/lib/postgresql/data") // db files in-memory
             .Build();
-        await PostgresContainer.StartAsync();
 
+        await PostgresContainer.StartAsync();
         NpgsqlConnectionStringBuilder connStrBuilder = new(PostgresContainer.GetConnectionString());
         Username = connStrBuilder.Username!;
         Password = connStrBuilder.Password!;
         Database = connStrBuilder.Database!;
         Port = connStrBuilder.Port;
+
+        NpgsqlConnectionStringBuilder connStrBuilderTemplate =
+            new(PostgresContainer.GetConnectionString()) { Database = "template1" };
+        _templateSource = NpgsqlDataSource.Create(connStrBuilder);
     }
 
     [OneTimeTearDown]
@@ -45,27 +50,28 @@ internal class PostgresDatabaseFixture
         await PostgresContainer.DisposeAsync();
     }
 
-    public static void CreateTemplateFromCurrentDb()
+    public static async Task CreateTemplateFromCurrentDb()
     {
         ThrowIfNotInitialized();
-
         NpgsqlConnection.ClearAllPools(); // can't drop a DB if connections remain open
-        using NpgsqlDataSource conn = CreateConnectionToTemplate();
-        conn.CreateCommand(
+        await using NpgsqlConnection conn = await TemplateDataSource().OpenConnectionAsync();
+
+        await using NpgsqlCommand cmd = new(
                 @$"
 			DROP DATABASE IF EXISTS {TemplateDatabase};
 			CREATE DATABASE {TemplateDatabase}
 				WITH TEMPLATE {Database}
 				OWNER '{Username}';
 			"
-            )
-            .ExecuteNonQuery();
+            , conn);
+
+        await cmd.ExecuteNonQueryAsync();
         HasCreatedTemplate = true;
     }
 
     // It is faster to recreate the db from an already seeded template
     // compared to dropping the db and recreating it from scratch
-    public static void ResetDatabaseToTemplate()
+    public static async Task ResetDatabaseToTemplate()
     {
         ThrowIfNotInitialized();
         if (!HasCreatedTemplate)
@@ -74,24 +80,24 @@ internal class PostgresDatabaseFixture
         }
 
         NpgsqlConnection.ClearAllPools(); // can't drop a DB if connections remain open
-        using NpgsqlDataSource conn = CreateConnectionToTemplate();
-        conn.CreateCommand(
+        await using NpgsqlConnection conn = await TemplateDataSource().OpenConnectionAsync();
+
+        await using NpgsqlCommand cmd = new(
                 @$"
 			DROP DATABASE IF EXISTS {Database};
 			CREATE DATABASE {Database}
 				WITH TEMPLATE {TemplateDatabase}
 				OWNER '{Username}';
 			"
-            )
-            .ExecuteNonQuery();
+            , conn);
+
+        await cmd.ExecuteNonQueryAsync();
     }
 
-    private static NpgsqlDataSource CreateConnectionToTemplate()
+    private static NpgsqlDataSource TemplateDataSource()
     {
         ThrowIfNotInitialized();
-        NpgsqlConnectionStringBuilder connStrBuilder =
-            new(PostgresContainer!.GetConnectionString()) { Database = "template1" };
-        return NpgsqlDataSource.Create(connStrBuilder);
+        return _templateSource ?? throw new InvalidOperationException("Template source has not been initialized");
     }
 
     private static void ThrowIfNotInitialized()
