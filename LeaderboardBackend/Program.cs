@@ -84,7 +84,12 @@ builder.Services.AddDbContext<ApplicationContext>(
                 connectionBuilder.Port = db.Port.Value;
             }
 
-            opt.UseNpgsql(connectionBuilder.ConnectionString, o => o.UseNodaTime());
+            NpgsqlDataSourceBuilder dataSourceBuilder = new(connectionBuilder.ConnectionString);
+            dataSourceBuilder.MapEnum<UserRole>();
+            dataSourceBuilder.UseNodaTime();
+            NpgsqlDataSource dataSource = dataSourceBuilder.Build();
+
+            opt.UseNpgsql(dataSource, o => o.UseNodaTime());
             opt.UseSnakeCaseNamingConvention();
         }
         else
