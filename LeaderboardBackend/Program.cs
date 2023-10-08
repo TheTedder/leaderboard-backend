@@ -309,14 +309,14 @@ using (ApplicationContext context = scope.ServiceProvider.GetRequiredService<App
 
     if (args.Contains("--migrate-db")) // the only way to migrate a production database
     {
-        context.Database.Migrate();
+        await context.Database.MigrateAsync();
         return;
     }
 
     if (config.MigrateDb && app.Environment.IsDevelopment())
     {
         // migration as part of the startup phase (dev env only)
-        context.MigrateDatabase();
+        await context.MigrateDatabase();
     }
 }
 
