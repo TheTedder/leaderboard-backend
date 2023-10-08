@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Threading.Tasks;
 using LeaderboardBackend.Test.TestApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NUnit.Framework;
@@ -11,9 +12,9 @@ public abstract class IntegrationTestsBase
     protected static readonly TestApiFactory _factory = new();
 
     [OneTimeSetUp]
-    public void OneTimeSetup()
+    public async Task OneTimeSetup()
     {
-        _factory.InitializeDatabase();
+        await _factory.InitializeDatabase();
     }
 
     [SetUp]

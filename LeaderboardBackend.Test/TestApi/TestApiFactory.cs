@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 using LeaderboardBackend.Models.Entities;
 using LeaderboardBackend.Test.Lib;
 using MailKit.Net.Smtp;
@@ -22,7 +23,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
 
         base.ConfigureWebHost(builder);
 
-        builder.ConfigureServices(services =>
+        builder.ConfigureServices(async services =>
         {
             if (PostgresDatabaseFixture.PostgresContainer is null)
             {
@@ -47,7 +48,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
             using IServiceScope scope = services.BuildServiceProvider().CreateScope();
             ApplicationContext dbContext =
                 scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-            InitializeDatabase(dbContext);
+            await InitializeDatabase(dbContext);
         });
     }
 
@@ -57,24 +58,24 @@ public class TestApiFactory : WebApplicationFactory<Program>
         return new TestApiClient(client);
     }
 
-    public void InitializeDatabase()
+    public async Task InitializeDatabase()
     {
         using IServiceScope scope = Services.CreateScope();
         ApplicationContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-        InitializeDatabase(dbContext);
+        await InitializeDatabase(dbContext);
     }
 
-    private static void InitializeDatabase(ApplicationContext dbContext)
+    private static async Task InitializeDatabase(ApplicationContext dbContext)
     {
         if (!PostgresDatabaseFixture.HasCreatedTemplate)
         {
-            dbContext.MigrateDatabase();
-            Seed(dbContext);
-            PostgresDatabaseFixture.CreateTemplateFromCurrentDb();
+            await dbContext.MigrateDatabase();
+            await Seed(dbContext);
+            await PostgresDatabaseFixture.CreateTemplateFromCurrentDb();
         }
     }
 
-    private static void Seed(ApplicationContext dbContext)
+    private static async Task Seed(ApplicationContext dbContext)
     {
         Leaderboard leaderboard =
             new() { Name = "Mario Goes to Jail", Slug = "mario-goes-to-jail" };
@@ -89,17 +90,16 @@ public class TestApiFactory : WebApplicationFactory<Program>
                 Role = UserRole.Administrator,
             };
 
-        dbContext.Add(admin);
-        dbContext.Add(leaderboard);
-
-        dbContext.SaveChanges();
+        await dbContext.Users.AddAsync(admin);
+        await dbContext.Leaderboards.AddAsync(leaderboard);
+        await dbContext.SaveChangesAsync();
     }
 
     /// <summary>
     /// Deletes and recreates the database
     /// </summary>
-    public void ResetDatabase()
+    public async Task ResetDatabase()
     {
-        PostgresDatabaseFixture.ResetDatabaseToTemplate();
+        await PostgresDatabaseFixture.ResetDatabaseToTemplate();
     }
 }
