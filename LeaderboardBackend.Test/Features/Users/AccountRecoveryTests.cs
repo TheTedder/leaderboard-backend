@@ -28,9 +28,9 @@ public class AccountRecoveryTests : IntegrationTestsBase
     }
 
     [TearDown]
-    public void TearDown()
+    public async Task TearDown()
     {
-        _factory.ResetDatabase();
+        await _factory.ResetDatabase();
         _scope.Dispose();
     }
 
