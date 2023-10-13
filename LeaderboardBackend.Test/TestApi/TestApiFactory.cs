@@ -73,13 +73,6 @@ public class TestApiFactory : WebApplicationFactory<Program>
         return new TestApiClient(client);
     }
 
-    private void InitializeDatabase()
-    {
-        using IServiceScope scope = Services.CreateScope();
-        ApplicationContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-        InitializeDatabase(dbContext);
-    }
-
     private static void InitializeDatabase(ApplicationContext dbContext)
     {
         dbContext.MigrateDatabase();
