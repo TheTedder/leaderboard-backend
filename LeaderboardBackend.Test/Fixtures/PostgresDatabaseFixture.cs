@@ -17,6 +17,8 @@ public class PostgresDatabaseFixture
     public static string? Password { get; private set; }
     public static NpgsqlDataSource? DataSource { get; private set; }
     public static int Port { get; private set; }
+    public static bool HasCreatedTemplate { get; private set; } = false;
+    private static string TemplateDatabase => Database! + "_template";
 
     [OneTimeSetUp]
     public static async Task OneTimeSetup()
@@ -45,5 +47,60 @@ public class PostgresDatabaseFixture
         }
 
         await PostgresContainer.DisposeAsync();
+    }
+
+    public static void CreateTemplateFromCurrentDb()
+    {
+        ThrowIfNotInitialized();
+
+        NpgsqlConnection.ClearAllPools(); // can't drop a DB if connections remain open
+        using NpgsqlDataSource conn = CreateConnectionToTemplate();
+        conn.CreateCommand(
+                @$"
+			DROP DATABASE IF EXISTS {TemplateDatabase};
+			CREATE DATABASE {TemplateDatabase}
+				WITH TEMPLATE {Database}
+				OWNER '{Username}';
+			"
+            )
+            .ExecuteNonQuery();
+        HasCreatedTemplate = true;
+    }
+
+    public static void ResetDatabaseToTemplate()
+    {
+        ThrowIfNotInitialized();
+        if (!HasCreatedTemplate)
+        {
+            throw new InvalidOperationException("Database template has not been created.");
+        }
+
+        NpgsqlConnection.ClearAllPools(); // can't drop a DB if connections remain open
+        using NpgsqlDataSource conn = CreateConnectionToTemplate();
+        conn.CreateCommand(
+                @$"
+			DROP DATABASE IF EXISTS {Database};
+			CREATE DATABASE {Database}
+				WITH TEMPLATE {TemplateDatabase}
+				OWNER '{Username}';
+			"
+            )
+            .ExecuteNonQuery();
+    }
+
+    private static NpgsqlDataSource CreateConnectionToTemplate()
+    {
+        ThrowIfNotInitialized();
+        NpgsqlConnectionStringBuilder connStrBuilder =
+            new(PostgresContainer!.GetConnectionString()) { Database = "template1" };
+        return NpgsqlDataSource.Create(connStrBuilder);
+    }
+
+    private static void ThrowIfNotInitialized()
+    {
+        if (PostgresContainer is null)
+        {
+            throw new InvalidOperationException("Postgres container is not initialized.");
+        }
     }
 }

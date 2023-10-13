@@ -28,7 +28,7 @@ namespace LeaderboardBackend.Test
         [SetUp]
         public async Task SetUp()
         {
-            await _factory.ResetDatabase();
+            _factory.ResetDatabase();
 
             _jwt = (await _apiClient.LoginAdminUser()).Token;
 

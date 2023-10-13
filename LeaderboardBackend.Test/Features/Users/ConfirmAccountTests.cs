@@ -35,9 +35,9 @@ public class ConfirmAccountTests : IntegrationTestsBase
     }
 
     [TearDown]
-    public async Task TearDown()
+    public void TearDown()
     {
-        await _factory.ResetDatabase();
+        _factory.ResetDatabase();
         _scope.Dispose();
     }
 

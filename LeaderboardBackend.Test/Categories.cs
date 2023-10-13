@@ -22,7 +22,7 @@ internal class Categories
         _factory = new TestApiFactory();
         _apiClient = _factory.CreateTestApiClient();
 
-        await _factory.ResetDatabase();
+        _factory.ResetDatabase();
         _jwt = (await _apiClient.LoginAdminUser()).Token;
     }
 
