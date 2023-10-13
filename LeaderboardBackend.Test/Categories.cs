@@ -10,19 +10,17 @@ using NUnit.Framework;
 namespace LeaderboardBackend.Test;
 
 [TestFixture]
-internal class Categories
+public class Categories
 {
-    private static TestApiClient _apiClient = null!;
-    private static TestApiFactory _factory = null!;
-    private static string? _jwt;
+    private TestApiClient _apiClient = null!;
+    private TestApiFactory _factory = null!;
+    private string? _jwt;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
     {
-        _factory = new TestApiFactory();
+        _factory = new();
         _apiClient = _factory.CreateTestApiClient();
-
-        _factory.ResetDatabase();
         _jwt = (await _apiClient.LoginAdminUser()).Token;
     }
 
@@ -32,8 +30,14 @@ internal class Categories
         _factory.Dispose();
     }
 
+    [SetUp]
+    public void Init()
+    {
+        _factory.ResetDatabase();
+    }
+
     [Test]
-    public static void GetCategory_Unauthorized()
+    public void GetCategory_Unauthorized()
     {
         RequestFailureException e = Assert.ThrowsAsync<RequestFailureException>(
             async () => await _apiClient.Get<CategoryViewModel>($"/api/categories/1", new())
@@ -43,7 +47,7 @@ internal class Categories
     }
 
     [Test]
-    public static void GetCategory_NotFound()
+    public void GetCategory_NotFound()
     {
         RequestFailureException e = Assert.ThrowsAsync<RequestFailureException>(
             async () =>
@@ -57,7 +61,7 @@ internal class Categories
     }
 
     [Test]
-    public static async Task CreateCategory_GetCategory_OK()
+    public async Task CreateCategory_GetCategory_OK()
     {
         LeaderboardViewModel createdLeaderboard = await _apiClient.Post<LeaderboardViewModel>(
             "/api/leaderboards",
