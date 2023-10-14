@@ -2,26 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LeaderboardBackend.Models.Entities;
 
-public class ApplicationContextConfig : IValidatableObject
+public class ApplicationContextConfig
 {
     public const string KEY = "ApplicationContext";
 
     public bool MigrateDb { get; set; } = false;
-    public PostgresConfig? Pg { get; set; }
 
-    public IEnumerable<ValidationResult> Validate(ValidationContext context)
-    {
-        if (Pg == null)
-        {
-            yield return new ValidationResult(
-                "Missing database configuration.",
-                new[] { nameof(Pg) }
-            );
-        }
-    }
+    [Required]
+    public required PostgresConfig Pg { get; set; }
 }
 
-public class PostgresConfig
+public record PostgresConfig
 {
     [Required]
     public required string Host { get; set; }

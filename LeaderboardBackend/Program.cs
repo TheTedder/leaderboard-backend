@@ -24,7 +24,6 @@ using Microsoft.FeatureManagement;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NodaTime;
-using Npgsql;
 
 #region WebApplicationBuilder
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -60,31 +59,7 @@ builder.Services
     .ValidateDataAnnotationsRecursively()
     .ValidateOnStart();
 
-PostgresConfig db = builder.Configuration.GetSection(ApplicationContextConfig.KEY).Get<ApplicationContextConfig>()!.Pg!;
-
-NpgsqlConnectionStringBuilder connectionBuilder = new()
-{
-    Host = db.Host,
-    Username = db.User,
-    Password = db.Password,
-    Database = db.Db,
-    IncludeErrorDetail = true,
-};
-
-if (db.Port is not null)
-{
-    connectionBuilder.Port = db.Port.Value;
-}
-
-NpgsqlDataSourceBuilder dataSourceBuilder = new(connectionBuilder.ConnectionString);
-dataSourceBuilder.UseNodaTime().MapEnum<UserRole>();
-NpgsqlDataSource dataSource = dataSourceBuilder.Build();
-
-builder.Services.AddDbContext<ApplicationContext>(opt =>
-{
-    opt.UseNpgsql(dataSource, o => o.UseNodaTime());
-    opt.UseSnakeCaseNamingConvention();
-});
+builder.Services.AddDbContext<ApplicationContext>();
 
 // Add services to the container.
 builder.Services.AddScoped<IUserService, UserService>();

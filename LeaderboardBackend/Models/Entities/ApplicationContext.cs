@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace LeaderboardBackend.Models.Entities;
@@ -7,8 +9,17 @@ namespace LeaderboardBackend.Models.Entities;
 public class ApplicationContext : DbContext
 {
     public const string CASE_INSENSITIVE_COLLATION = "case_insensitive";
-    public ApplicationContext(DbContextOptions<ApplicationContext> options)
-        : base(options) { }
+
+    // the HashCode is calculated with all of the config's property because PostgresConfig is a record
+    private static readonly ConcurrentDictionary<PostgresConfig, NpgsqlDataSource> _dataSourceCache = new();
+
+    private readonly NpgsqlDataSource _dataSource;
+
+    public ApplicationContext(DbContextOptions<ApplicationContext> options, IOptions<ApplicationContextConfig> config)
+        : base(options)
+    {
+        _dataSource = CreateDataSource(config.Value.Pg);
+    }
 
     public DbSet<AccountRecovery> AccountRecoveries { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
@@ -60,5 +71,36 @@ public class ApplicationContext : DbContext
 
         modelBuilder.HasCollation(CASE_INSENSITIVE_COLLATION, "und-u-ks-level2", "icu", deterministic: false);
         modelBuilder.HasPostgresEnum<UserRole>();
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder opt)
+    {
+        opt.UseNpgsql(_dataSource, o => o.UseNodaTime());
+        opt.UseSnakeCaseNamingConvention();
+    }
+
+    private static NpgsqlDataSource CreateDataSource(PostgresConfig c)
+    {
+        return _dataSourceCache.GetOrAdd(c, config =>
+        {
+            NpgsqlConnectionStringBuilder connectionBuilder = new()
+            {
+                Host = config.Host,
+                Username = config.User,
+                Password = config.Password,
+                Database = config.Db,
+                IncludeErrorDetail = true,
+            };
+
+            if (config.Port is not null)
+            {
+                connectionBuilder.Port = config.Port.Value;
+            }
+
+            NpgsqlDataSourceBuilder dataSourceBuilder = new(connectionBuilder.ConnectionString);
+            dataSourceBuilder.UseNodaTime().MapEnum<UserRole>();
+
+            return dataSourceBuilder.Build();
+        });
     }
 }
