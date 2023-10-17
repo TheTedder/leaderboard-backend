@@ -22,15 +22,15 @@ public class SendRecoveryTests : IntegrationTestsBase
     private IServiceScope _scope = null!;
 
     [SetUp]
-    public void Init()
+    public async Task Init()
     {
+        await _factory.ResetDatabase();
         _scope = _factory.Services.CreateScope();
     }
 
     [TearDown]
-    public async Task TearDown()
+    public void TearDown()
     {
-        await _factory.ResetDatabase();
         _scope.Dispose();
     }
 
