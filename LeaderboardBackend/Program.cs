@@ -59,6 +59,7 @@ builder.Services
     .ValidateDataAnnotationsRecursively()
     .ValidateOnStart();
 
+builder.Services.AddSingleton<AppContextDataSourceProvider>();
 builder.Services.AddDbContext<ApplicationContext>();
 
 // Add services to the container.
