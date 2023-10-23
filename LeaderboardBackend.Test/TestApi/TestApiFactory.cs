@@ -32,14 +32,17 @@ public class TestApiFactory : WebApplicationFactory<Program>
             throw new InvalidOperationException("Postgres container is not initialized.");
         }
 
-        Environment.SetEnvironmentVariable("ApplicationContext__PG__DB", PostgresDatabaseFixture.Database);
-        Environment.SetEnvironmentVariable("ApplicationContext__PG__PORT", PostgresDatabaseFixture.Port.ToString());
-        Environment.SetEnvironmentVariable("ApplicationContext__PG__HOST", PostgresDatabaseFixture.PostgresContainer!.Hostname);
-        Environment.SetEnvironmentVariable("ApplicationContext__PG__USER", PostgresDatabaseFixture.Username);
-        Environment.SetEnvironmentVariable("ApplicationContext__PG__PASSWORD", PostgresDatabaseFixture.Password);
-
         builder.ConfigureServices(services =>
         {
+            services.Configure<ApplicationContextConfig>(conf =>
+                conf.Pg = new PostgresConfig
+                {
+                    Db = PostgresDatabaseFixture.Database!,
+                    Port = (ushort)PostgresDatabaseFixture.Port,
+                    Host = PostgresDatabaseFixture.PostgresContainer.Hostname,
+                    User = PostgresDatabaseFixture.Username!,
+                    Password = PostgresDatabaseFixture.Password!
+                });
             // mock SMTP client
             services.Replace(ServiceDescriptor.Transient(_ => _mock.Object));
 

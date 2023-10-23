@@ -28,9 +28,9 @@ public class TestRecoveryTests : IntegrationTestsBase
     }
 
     [SetUp]
-    public void Init()
+    public async Task Init()
     {
-        _factory.ResetDatabase();
+        await _factory.ResetDatabase();
         _scope = _factory.Services.CreateScope();
     }
 
