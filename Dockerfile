@@ -2,8 +2,8 @@
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-ENV ASPNETCORE_HTTP_PORTS "80"
 EXPOSE 80
+EXPOSE 443
 
 # Note: when debugging with Visual Studio, the other stages are not used
 
