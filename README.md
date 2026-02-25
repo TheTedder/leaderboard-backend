@@ -66,7 +66,7 @@ cp example.env .env
 ### Running the Database(s)
 
 #### Postgres with Docker compose
-As mentioned above, we run Docker containers for the DB. After [installing Docker Compose](https://docs.docker.com/compose/install/), run this command in the project root:
+If you want to run the entire app in a container you can skip this step. As mentioned above, we run Docker containers for the DB. After [installing Docker Compose](https://docs.docker.com/compose/install/), run this command in the project root:
 
 ```bash
 docker compose up -d
@@ -113,6 +113,13 @@ On Windows/Mac, you can run the following command (from the [.NET docs](https://
 dotnet dev-certs https --trust
 ```
 
+If you want to run the app in a container, run this instead. Make sure the password matches what you have set in your .env.
+
+```bash
+# Use backslashes instead on Windows.
+dotnet dev-certs https -ep ./https/aspnetapp.pfx -p <mypassword>
+```
+
 If you are on Linux, you will need to follow your distribution's documentation to trust a certificate.
 
 * [This chapter](https://docs.microsoft.com/en-us/aspnet/core/security/enforcing-ssl?view=aspnetcore-6.0&tabs=visual-studio#trust-https-certificate-on-linux) in the .NET docs covers how to generate and then trust the dev cert for service-to-service (e.g. cURLing) and browser communications on Ubuntu.
@@ -137,6 +144,14 @@ To run the application from the CLI, run the following command from the root of 
 ```bash
 cd LeaderboardBackend
 dotnet run  # or `dotnet watch` to run with hot reload
+```
+
+#### Running in a container
+
+If you want to run the app in a container instead, run the following command. Make sure you've generated your dev certificate.
+
+```bash
+docker compose --file backend-compose.yml up -d
 ```
 
 #### Test the App
