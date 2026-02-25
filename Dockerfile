@@ -8,7 +8,7 @@ EXPOSE 443
 # Note: when debugging with Visual Studio, the other stages are not used
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG DISABLE_OPENAPI_FILE_GEN=true
+ENV DISABLE_OPENAPI_FILE_GEN=true
 
 WORKDIR /source
 # copy csproj and restore as distinct layer that can be cached
